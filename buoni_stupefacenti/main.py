@@ -2,7 +2,6 @@ import httpx
 import datetime
 import subprocess
 import os
-import shutil
 import platform
 from datetime import date
 from pathlib import Path
