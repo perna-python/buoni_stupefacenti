@@ -29,9 +29,6 @@ def loginFarmarete():
         response = client.get("https://www.farmarete.it/api/shared/AppVersion")
         version = response.json()["version"]
 
-        cookies = response.headers['Set-Cookie'].split(";")[0].split("=")
-        cookies = {cookies[0]: cookies[1]}        
-
         json_data = {
             'username': os.getenv("FARMARETE_USERNAME"),
             'password': os.getenv("FARMARETE_PASSWORD"),
@@ -41,13 +38,13 @@ def loginFarmarete():
         response = client.post('https://www.farmarete.it/api/auth/login', json=json_data)
         logger.info("Login response: %s", response.json())
 
-    return client.headers, cookies, response.json()
+    return client.headers, response.json()
 
-def idBuoniAcquisto(client:httpx.Client, anno:int, mese:int, cookies, headers):
+def idBuoniAcquisto(client:httpx.Client, anno:int, mese:int, headers):
     logger.info(f"Ricerca degli ID degli ordini dell'anno {anno}, mese {mese}")
     primoGiorno, ultimoGiorno = last_day_of_month(datetime.date(anno, mese, 1))
     url = f"https://www.farmarete.it/api/stupeOrdini/elencoordini?pageSize=50&currentPage=0&sortField=dataInserimento&sortDirection=desc&searchText=&searchDateFrom={primoGiorno}&searchDateTo={ultimoGiorno}&searchStato=3,5,8,6,2,9,10&searchMagazzini=2,3&idFarmaciaAdminFiltro=0"
-    response = client.get(url, cookies=cookies, headers=headers)
+    response = client.get(url, headers=headers)
     ordiniEffettuati = response.json()
     idOrdine = [str(i["idOrdine"]) for i in ordiniEffettuati["items"]]
     logger.info(f"Numero di ordini: {ordiniEffettuati["nItems"]}, ID ordini: {idOrdine}")
@@ -73,17 +70,17 @@ def aperturaFile(pathCartella: Path, nomeFile: str):
 
 def buoniAcquisto(anno: int, mese: int, openFile=False):
     logger.info(f"Processando gli ordine dell' anno {anno}, mese {mese}")
-    headers, cookies, token = loginFarmarete()
+    headers, token = loginFarmarete()
     base_path = Path(os.getcwd()) / "documenti"
-    with httpx.Client(timeout=None, follow_redirects=True, verify=False, headers=headers, cookies=cookies) as client:
+    with httpx.Client(timeout=None, follow_redirects=True, verify=False, headers=headers) as client:
         headers["Authorization"] = "Bearer " + token["token"]["token"]
-        idOrdine, numeroOrdini = idBuoniAcquisto(client=client, anno=anno, mese=mese, cookies=cookies, headers=headers)
+        idOrdine, numeroOrdini = idBuoniAcquisto(client=client, anno=anno, mese=mese, headers=headers)
         pathCartella = creaCartella(base_path, str(anno), str(mese))
 
         for ordine_id in idOrdine:
             logger.info(f"Processando l'ID ordine {ordine_id}")
             url = f"https://www.farmarete.it/api/shared/getUseOnceToken?contentId={ordine_id}"
-            response = client.get(url, cookies=cookies, headers=headers)
+            response = client.get(url, headers=headers)
             token = response.json()["token"]
 
             # ordine firmato
