@@ -10,8 +10,7 @@ import logging
 import flet as ft
 from pdf import creaPdf
 
-from dotenv import load_dotenv
-load_dotenv()
+from config import FARMARETE_USERNAME, FARMARETE_PASSWORD
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -30,8 +29,8 @@ def loginFarmarete():
         version = response.json()["version"]
 
         json_data = {
-            'username': os.getenv("FARMARETE_USERNAME"),
-            'password': os.getenv("FARMARETE_PASSWORD"),
+            'username': FARMARETE_USERNAME,
+            'password': FARMARETE_PASSWORD,
             'version': version,
         }
 
@@ -127,7 +126,7 @@ def main(page: ft.Page):
 
     annoTextField =ft.TextField(label="anno", value=annoValue())
     meseTextField =ft.TextField(label="mese", value=meseValue())
-    numeroOrdiniButton = ft.IconButton(icon=ft.icons.DOWNLOAD, on_click=ordini)
+    numeroOrdiniButton = ft.IconButton(icon=ft.Icons.DOWNLOAD, on_click=ordini)
 
     page.add(ft.Row(
         controls=[
